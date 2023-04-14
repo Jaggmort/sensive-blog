@@ -7,8 +7,30 @@ from django.contrib.auth.models import User
 class PostQuerySet(models.QuerySet):
 
     def year(self, year):
-        posts_at_year = self.filter(published_at__year=year).order_by('published_at')
+        posts_at_year = self.filter(published_at__year=year)\
+                            .order_by('published_at')
         return posts_at_year
+
+    def popular(self):
+        posts = self.annotate(likes_count=Count('likes',
+                                                distinct=True
+                                                ))\
+                    .order_by('-likes_count')
+        return posts
+
+    def fetch_with_comments_count(self):
+        # При использовании .annotate происходит второй LEFT OUTER JOIN
+        # в запросе, из-за чего он долго выполняется.
+        ids = [post.id for post in self]
+        posts_with = Post.objects.filter(id__in=ids)\
+                                 .annotate(comments_count=Count('comments',
+                                                                distinct=True
+                                                                ))
+        ids_and_comments = posts_with.values_list('id', 'comments_count')
+        count_for_id = dict(ids_and_comments)
+        for post in self:
+            post.comments_count = count_for_id[post.id]
+        return self
 
 
 class TagQuerySet(models.QuerySet):
