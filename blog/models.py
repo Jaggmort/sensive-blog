@@ -1,6 +1,6 @@
 from django.db import models
 from django.urls import reverse
-from django.db.models import Count
+from django.db.models import Count, Prefetch
 from django.contrib.auth.models import User
 
 
@@ -16,6 +16,14 @@ class PostQuerySet(models.QuerySet):
                                                 distinct=True
                                                 ))\
                     .order_by('-likes_count')
+        return posts
+
+    def author(self):
+        posts = self.prefetch_related('author')
+        return posts
+
+    def tags_posts_count(self):
+        posts = self.prefetch_related(Prefetch('tags', queryset=Tag.objects.annotate(Count('posts'))))
         return posts
 
     def fetch_with_comments_count(self):
