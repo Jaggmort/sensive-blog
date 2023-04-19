@@ -18,7 +18,7 @@ class PostQuerySet(models.QuerySet):
                     .order_by('-likes_count')
         return posts
 
-    def author(self):
+    def prefetch_author(self):
         posts = self.prefetch_related('author')
         return posts
 
